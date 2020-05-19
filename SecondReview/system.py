@@ -1,8 +1,17 @@
 POSSIBLE_FIELDS = ['guests', 'youngest', 'duration']
-PRICE_OF_FAMILY_ROOM = 3000
-PRICE_OF_BIG_ROOM = 2500
-PRICE_OF_SMALL_ROOM = 2000
-PRICE_OF_SINGLE_ROOM = 1500
+
+
+class Rooms:
+    def __init__(self):
+        self.family_rooms = 5
+        self.big_rooms = 5
+        self.small_rooms = 5
+        self.single_rooms = 5
+        self.prices = {'family room': 3000,
+                       'big room': 2500,
+                       'small room': 2000,
+                       'single room': 1500,
+                       'none': 0}
 
 
 class Reservation:
@@ -20,38 +29,35 @@ class Reception:
     def __init__(self):
         self.clients = []
         self.first_in_queue = 0
-        self.family_rooms = 5
-        self.big_rooms = 5
-        self.small_rooms = 5
-        self.single_rooms = 5
+        self.rooms = Rooms()
 
-    def create_reservation(self, guests=0, youngest=0, duration=0):
+    def create_reservation(self, guests, youngest, duration):
         reservation_id = len(self.clients)
         new_reservation = Reservation(reservation_id, guests, youngest, duration)
         room = self.get_best_variant(youngest, guests)
-        if room == 'failed':
+        if room == 'none':
             new_reservation.status = 'rejected'
         else:
             new_reservation.room_type = room
+            new_reservation.bill = self.rooms.prices[room] * duration
         self.clients.append(new_reservation)
-        print(reservation_id)
         return reservation_id
 
     def get_best_variant(self, youngest, guests):
-        if youngest < 12 and self.family_rooms > 0:
-            self.family_rooms -= 1
+        if youngest < 12 and self.rooms.family_rooms > 0:
+            self.rooms.family_rooms -= 1
             return 'family room'
-        elif guests > 4 and self.big_rooms > 0:
-            self.big_rooms -= 1
+        elif guests > 4 and self.rooms.big_rooms > 0:
+            self.rooms.big_rooms -= 1
             return 'big room'
-        elif 4 >= guests > 1 and self.small_rooms > 0:
-            self.small_rooms -= 1
+        elif 4 >= guests > 1 and self.rooms.small_rooms > 0:
+            self.rooms.small_rooms -= 1
             return 'small room'
-        elif guests == 1 and self.single_rooms > 0:
-            self.single_rooms -= 1
+        elif guests == 1 and self.rooms.single_rooms > 0:
+            self.rooms.single_rooms -= 1
             return 'single room'
         else:
-            return 'failed'
+            return 'none'
 
     def get_status(self, reservation_id):
         self.registration(reservation_id)
@@ -78,16 +84,7 @@ class Reception:
 
     def get_position_in_queue(self, reservation_id):
         reservation = self.clients[reservation_id]
-        return reservation.id - self.first_in_queue
+        return reservation.id - self.first_in_queue + 1
 
     def get_bill(self, reservation_id):
-        reservation = self.clients[reservation_id]
-        if reservation.room_type == 'family room':
-            reservation.bill = PRICE_OF_FAMILY_ROOM * reservation.duration_of_stay
-        elif reservation.room_type == 'big room':
-            reservation.bill = PRICE_OF_BIG_ROOM * reservation.duration_of_stay
-        elif reservation.room_type == 'small room':
-            reservation.bill = PRICE_OF_SMALL_ROOM * reservation.duration_of_stay
-        elif reservation.room_type == 'single room':
-            reservation.bill = PRICE_OF_SINGLE_ROOM * reservation.duration_of_stay
-        return reservation.bill
+        return self.clients[reservation_id].bill

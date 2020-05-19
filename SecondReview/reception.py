@@ -1,47 +1,57 @@
 import requests
 import argparse
+STATUS = {'outdated': 'The guests have already left',
+          'queue': 'Booking in progress',
+          'completed': 'Your reservation is made, welcome!',
+          'rejected': 'Sorry, we cannot accommodate you in our hotel'}
 
 
 def ask_number_of_people():
-    user_input = input('How many people are in your company? ')
-
-    try:
-        number = int(user_input)
-        if number < 0:
-            print('Sorry, what?')
-            return -1
-    except ValueError:
-        print('The number of guests must be a number!')
-        return -1
+    correct_input = False
+    while not correct_input:
+        user_input = input('How many people are in your company? ')
+        try:
+            number = int(user_input)
+            if number < 0:
+                print('Sorry, what? Please, try again')
+                continue
+        except ValueError:
+            print('The number of guests must be a number! Please, try again')
+            continue
+        correct_input = True
+        return int(user_input)
 
 
 def ask_age_of_the_youngest():
-    user_input = input('How old is the youngest guest? ')
-
-    try:
-        return int(user_input)
-    except ValueError:
-        print('Age must be a number!')
-        return -1
+    correct_input = False
+    while not correct_input:
+        user_input = input('How old is the youngest guest? ')
+        try:
+            user_input = int(user_input)
+        except ValueError:
+            print('Age must be a number! Please, try again')
+            continue
+        correct_input = True
+        return user_input
 
 
 def ask_duration_of_stay():
-    user_input = input('How many days would you like to stay? ')
-
-    try:
-        return int(user_input)
-    except ValueError:
-        print('The length of stay must be a number!')
-        return -1
+    correct_input = False
+    while not correct_input:
+        user_input = input('How many days would you like to stay? ')
+        try:
+            user_input = int(user_input)
+        except ValueError:
+            print('The length of stay must be a number! Please, try again')
+            continue
+        correct_input = True
+        return user_input
 
 
 def create_reservation(args):
     guests = ask_number_of_people()
     youngest = ask_age_of_the_youngest()
     duration = ask_duration_of_stay()
-    if guests == -1 or duration == -1 or youngest == -1:
-        print('Sorry, incorrect data, we can\'t complete such reservation')
-        return
 
     reservation_id = requests.post(f'http://{args.host}:{args.port}/create', data=dict(
         guests=guests,
@@ -71,7 +81,7 @@ def leave(args):
     )).text
 
     if status == 'completed':
-        bill = requests.post(f'http://{args.host}:{args.port}/departure', params=dict(
+        bill = requests.post(f'http://{args.host}:{args.port}/departure', data=dict(
             id=reservation_id
         )).text
         print(f'You have to pay {bill} rubles. Looking forward to see you again!')
@@ -98,14 +108,8 @@ def get_status(args):
         id=reservation_id
     )).text
 
-    if status == 'outdated':
-        print('The guests have already left')
-    elif status == 'queue':
-        print('Booking in progress')
-    elif status == 'completed':
-        print('Your reservation is made, welcome!')
-    elif status == 'rejected':
-        print('Sorry, we cannot accommodate you in our hotel')
+    if status in STATUS.keys():
+        print(STATUS[status])
     else:
         print('No such reservation')
 
@@ -129,7 +133,10 @@ def get_position(args):
         id=reservation_id
     )).text
 
-    print(f'Your position is {position}')
+    if int(position) <= 0:
+        print('Your reservation is already made, you are no longer in the queue')
+    else:
+        print(f'Your position is {position}')
 
 
 def get_bill(args):

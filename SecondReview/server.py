@@ -8,19 +8,19 @@ Reception = Reception()
 
 @app.route('/create', methods=['POST'])
 def create_reservation():
-    args = {
-        item: int(flask.request.data[item])
+    data = {
+        item: int(flask.request.form[item])
         for item in POSSIBLE_FIELDS
-        if item in flask.request.args
+        if item in flask.request.form
     }
 
-    reservation_id = Reception.create_reservation(**args)
+    reservation_id = Reception.create_reservation(**data)
     return str(reservation_id)
 
 
 @app.route('/departure', methods=['POST'])
 def departure():
-    id = int(flask.request.args['id'])
+    id = int(flask.request.form['id'])
     bill = Reception.departure(id)
     return str(bill)
 
