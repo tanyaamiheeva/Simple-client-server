@@ -4,6 +4,7 @@ STATUS = {'outdated': 'The guests have already left',
           'queue': 'Booking in progress',
           'completed': 'Your reservation is made, welcome!',
           'rejected': 'Sorry, we cannot accommodate you in our hotel'}
+address = ''
 
 
 def ask_number_of_people():
@@ -48,21 +49,25 @@ def ask_duration_of_stay():
         return user_input
 
 
-def create_reservation(args):
+def create_reservation():
     guests = ask_number_of_people()
     youngest = ask_age_of_the_youngest()
     duration = ask_duration_of_stay()
-
-    reservation_id = requests.post(f'http://{args.host}:{args.port}/create', data=dict(
-        guests=guests,
-        youngest=youngest,
-        duration=duration
-    )).text
+    reservation_id = 0
+    try:
+        reservation_id = requests.post(address + '/create', data=dict(
+            guests=guests,
+            youngest=youngest,
+            duration=duration
+        )).text
+    except requests.exceptions.ConnectionError:
+        print('Sorry, no connection. Try next time')
+        main_exit()
 
     print(f'Your reservation ID is {reservation_id}, we will compete it soon')
 
 
-def leave(args):
+def leave():
     reservation_id = int(input('Please, enter your reservation ID: '))
     try:
         int(reservation_id)
@@ -76,12 +81,17 @@ def leave(args):
         print('Incorrect ID')
         return
 
-    status = requests.get(f'http://{args.host}:{args.port}/get_status', params=dict(
-        id=reservation_id
-    )).text
+    status = None
+    try:
+        status = requests.get(address + '/get_status', params=dict(
+            id=reservation_id
+        )).text
+    except requests.exceptions.ConnectionError:
+        print('Sorry, no connection. Try next time')
+        main_exit()
 
     if status == 'completed':
-        bill = requests.post(f'http://{args.host}:{args.port}/departure', data=dict(
+        bill = requests.post(address + '/departure', data=dict(
             id=reservation_id
         )).text
         print(f'You have to pay {bill} rubles. Looking forward to see you again!')
@@ -89,7 +99,7 @@ def leave(args):
         print('Sorry, you can\'t leave right now')
 
 
-def get_status(args):
+def get_status():
     reservation_id = input('Please, enter your reservation ID: ')
 
     try:
@@ -104,9 +114,14 @@ def get_status(args):
         print('Incorrect ID')
         return
 
-    status = requests.get(f'http://{args.host}:{args.port}/get_status', params=dict(
-        id=reservation_id
-    )).text
+    status = None
+    try:
+        status = requests.get(address + '/get_status', params=dict(
+            id=reservation_id
+        )).text
+    except requests.exceptions.ConnectionError:
+        print('Sorry, no connection. Try next time')
+        main_exit()
 
     if status in STATUS.keys():
         print(STATUS[status])
@@ -114,7 +129,7 @@ def get_status(args):
         print('No such reservation')
 
 
-def get_position(args):
+def get_position():
     reservation_id = input('Please, enter your reservation ID: ')
 
     try:
@@ -129,9 +144,14 @@ def get_position(args):
         print('Incorrect ID')
         return
 
-    position = requests.get(f'http://{args.host}:{args.port}/get_position', params=dict(
-        id=reservation_id
-    )).text
+    position = None
+    try:
+        position = requests.get(address + '/get_position', params=dict(
+            id=reservation_id
+        )).text
+    except requests.exceptions.ConnectionError:
+        print('Sorry, no connection. Try next time')
+        main_exit()
 
     if int(position) <= 0:
         print('Your reservation is already made, you are no longer in the queue')
@@ -139,7 +159,7 @@ def get_position(args):
         print(f'Your position is {position}')
 
 
-def get_bill(args):
+def get_bill():
     reservation_id = input('Please, enter your reservation ID: ')
 
     try:
@@ -153,10 +173,14 @@ def get_bill(args):
     except ValueError:
         print('Incorrect ID')
         return
-
-    bill = requests.get(f'http://{args.host}:{args.port}/get_bill', params=dict(
-        id=reservation_id
-    )).text
+    bill = None
+    try:
+        bill = requests.get(address + '/get_bill', params=dict(
+            id=reservation_id
+        )).text
+    except requests.exceptions.ConnectionError:
+        print('Sorry, no connection. Try next time')
+        main_exit()
 
     print(f'You should pay {bill} rubles')
 
@@ -165,7 +189,10 @@ def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='localhost')
     parser.add_argument('--port', default=8000, type=int)
-    return parser
+    args = parser.parse_args()
+    global address
+    address = ("http://" + args.host + ":" + str(args.port) + "/")
+    return address
 
 
 def main_exit():
@@ -191,7 +218,6 @@ def help():
 
 def main():
     parser = create_parser()
-    args = parser.parse_args()
 
     while True:
         try:
@@ -199,15 +225,15 @@ def main():
             if user_command == 'help':
                 help()
             elif user_command == 'create':
-                create_reservation(args)
+                create_reservation()
             elif user_command == 'leave':
-                leave(args)
+                leave()
             elif user_command == 'get_status':
-                get_status(args)
+                get_status()
             elif user_command == 'get_position':
-                get_position(args)
+                get_position()
             elif user_command == 'get_bill':
-                get_bill(args)
+                get_bill()
             elif user_command == 'exit':
                 main_exit()
             else:

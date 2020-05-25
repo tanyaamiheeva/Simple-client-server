@@ -1,17 +1,14 @@
+from utility import Constants
 POSSIBLE_FIELDS = ['guests', 'youngest', 'duration']
 
 
 class Rooms:
     def __init__(self):
-        self.family_rooms = 5
-        self.big_rooms = 5
-        self.small_rooms = 5
-        self.single_rooms = 5
-        self.prices = {'family room': 3000,
-                       'big room': 2500,
-                       'small room': 2000,
-                       'single room': 1500,
-                       'none': 0}
+        self.family_rooms = Constants.family_rooms_count
+        self.big_rooms = Constants.big_rooms_count
+        self.small_rooms = Constants.small_rooms_count
+        self.single_rooms = Constants.single_rooms_count
+        self.prices = Constants.prices
 
 
 class Reservation:
@@ -21,7 +18,7 @@ class Reservation:
         self.guests_number = guests
         self.duration_of_stay = duration
         self.status = 'queue'
-        self.room_type = 'none'
+        self.room_type = None
         self.bill = 0
 
 
@@ -35,7 +32,7 @@ class Reception:
         reservation_id = len(self.clients)
         new_reservation = Reservation(reservation_id, guests, youngest, duration)
         room = self.get_best_variant(youngest, guests)
-        if room == 'none':
+        if room is None:
             new_reservation.status = 'rejected'
         else:
             new_reservation.room_type = room
@@ -44,20 +41,20 @@ class Reception:
         return reservation_id
 
     def get_best_variant(self, youngest, guests):
-        if youngest < 12 and self.rooms.family_rooms > 0:
+        if youngest < Constants.youngest_age and self.rooms.family_rooms > 0:
             self.rooms.family_rooms -= 1
             return 'family room'
-        elif guests > 4 and self.rooms.big_rooms > 0:
+        elif guests > Constants.guests_for_big_room and self.rooms.big_rooms > 0:
             self.rooms.big_rooms -= 1
             return 'big room'
-        elif 4 >= guests > 1 and self.rooms.small_rooms > 0:
+        elif Constants.guests_for_big_room >= guests > 1 and self.rooms.small_rooms > 0:
             self.rooms.small_rooms -= 1
             return 'small room'
-        elif guests == 1 and self.rooms.single_rooms > 0:
+        elif guests == Constants.single_guest and self.rooms.single_rooms > 0:
             self.rooms.single_rooms -= 1
             return 'single room'
         else:
-            return 'none'
+            return None
 
     def get_status(self, reservation_id):
         self.registration(reservation_id)
